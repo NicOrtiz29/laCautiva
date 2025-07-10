@@ -8,8 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { PlusCircle, MinusCircle, LogOut, User } from 'lucide-react';
-import { Dialog as UIDialog } from '@/components/ui/dialog';
+import { PlusCircle, MinusCircle, LogOut, User, BookOpen } from 'lucide-react';
+import { Dialog as UIDialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table } from '@/components/ui/table';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -18,6 +18,7 @@ import BalanceCard from '@/components/balance-card';
 import TransactionForm from '@/components/transaction-form';
 import TransactionsList from '@/components/transactions-list';
 import MonthlySummary from '@/components/spending-suggestion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type AuditoriaItem = {
   id: string;
@@ -49,21 +50,29 @@ export function Dashboard() {
 
   const fetchAuditoria = async () => {
     setLoadingAuditoria(true);
-    const snapshot = await getDocs(collection(db, 'auditoria'));
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AuditoriaItem[];
-    setAuditoria(
-      data.sort((a, b) => {
-        const fechaA = a.fecha?.seconds || 0;
-        const fechaB = b.fecha?.seconds || 0;
-        return fechaB - fechaA;
-      })
-    );
+    try {
+      const snapshot = await getDocs(collection(db, 'auditoria'));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AuditoriaItem[];
+      setAuditoria(
+        data.sort((a, b) => {
+          const fechaA = a.fecha?.seconds || 0;
+          const fechaB = b.fecha?.seconds || 0;
+          return fechaB - fechaA;
+        })
+      );
+      console.log('Auditoría cargada:', data);
+    } catch (error) {
+      console.error('Error al cargar auditoría:', error);
+      setAuditoria([]);
+    }
     setLoadingAuditoria(false);
   };
 
   const handleOpenAuditoria = async () => {
+    console.log('Abriendo modal de auditoría...');
     await fetchAuditoria();
     setAuditoriaOpen(true);
+    console.log('Modal de auditoría abierto:', auditoriaOpen);
   };
 
   const handleDelete = async (id: string) => {
@@ -79,7 +88,23 @@ export function Dashboard() {
   const confirmDeleteTransaction = async () => {
     if (selectedTx) {
       try {
+        // Guardar datos del movimiento eliminado
+        const eliminado = {
+          amount: selectedTx.amount,
+          description: selectedTx.description,
+          category: selectedTx.category,
+          type: selectedTx.type
+        };
         await deleteTransaction(selectedTx.id);
+        // Registrar auditoría
+        try {
+          const { registrarAuditoria } = await import('@/lib/actions');
+          await registrarAuditoria({
+            usuario: userData?.name || userData?.email || 'Desconocido',
+            accion: `Eliminó ${selectedTx.type === 'deposit' ? 'depósito' : 'gasto'}`,
+            eliminado
+          });
+        } catch (e) { /* noop */ }
         toast({ title: 'Transacción eliminada', description: 'La transacción fue eliminada correctamente.', variant: 'default' });
       } catch (error) {
         toast({ title: 'Error al eliminar', description: 'No se pudo eliminar la transacción.', variant: 'destructive' });
@@ -100,12 +125,35 @@ export function Dashboard() {
   const confirmEditTransaction = async () => {
     if (selectedTx) {
       try {
+        // Guardar estado anterior
+        const antes = {
+          amount: selectedTx.amount,
+          description: selectedTx.description,
+          category: selectedTx.category,
+          type: selectedTx.type
+        };
+        const despues = {
+          amount: editAmount,
+          description: editDescription,
+          category: editCategory,
+          type: selectedTx.type
+        };
         const txRef = doc(db, 'transactions', selectedTx.id);
         await updateDoc(txRef, {
           amount: editAmount,
           description: editDescription,
           category: editCategory
         });
+        // Registrar auditoría
+        try {
+          const { registrarAuditoria } = await import('@/lib/actions');
+          await registrarAuditoria({
+            usuario: userData?.name || userData?.email || 'Desconocido',
+            accion: `Editó ${selectedTx.type === 'deposit' ? 'depósito' : 'gasto'}`,
+            antes,
+            despues
+          });
+        } catch (e) { /* noop */ }
         toast({ title: 'Transacción actualizada', description: 'Los cambios fueron guardados correctamente.', variant: 'default' });
       } catch (error) {
         toast({ title: 'Error al editar', description: 'No se pudo actualizar la transacción.', variant: 'destructive' });
@@ -148,19 +196,29 @@ export function Dashboard() {
     }
   };
 
+  // Categorías predefinidas según el tipo de transacción
+  const categories = dialogType === 'deposit'
+    ? [
+        { value: 'cuota', label: 'Cuota Mensual' },
+        { value: 'donacion', label: 'Donación' },
+        { value: 'subvencion', label: 'Subvención' },
+        { value: 'evento', label: 'Evento' },
+        { value: 'otros_ingresos', label: 'Otros Ingresos' }
+      ]
+    : [
+        { value: 'viajes', label: 'Viajes' },
+        { value: 'mantenimiento', label: 'Mantenimiento' },
+        { value: 'limpieza', label: 'Limpieza' },
+        { value: 'construccion', label: 'Construcción' },
+        { value: 'otros', label: 'Otros' }
+      ];
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center justify-center mt-8 mb-4">
-        <img src="/LOGOLC.png" alt="Logo La Cautiva" className="mx-auto" style={{ width: 160, height: 160, objectFit: 'contain' }} />
-        <h2 className="mt-4 text-4xl font-extrabold tracking-wide text-center">LA CAUTIVA</h2>
-        {isAdmin && (
-          <button
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
-            onClick={handleOpenAuditoria}
-          >
-            Auditoría
-          </button>
-        )}
+        {/* <img src="/LOGOLC.png" alt="Logo La Cautiva" className="mx-auto" style={{ width: 160, height: 160, objectFit: 'contain' }} /> */}
+        {/* <h2 className="mt-4 text-4xl font-extrabold tracking-wide text-center">LA CAUTIVA</h2> */}
+        {/* Botón de Auditoría eliminado de aquí */}
       </div>
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -189,6 +247,9 @@ export function Dashboard() {
                 <MinusCircle className="mr-2 h-4 w-4" />
                 Añadir Gasto
               </Button>
+              <Button className="bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" onClick={handleOpenAuditoria}>
+                <BookOpen className="w-5 h-5" /> Auditoría
+              </Button>
             </>
           )}
           <Button variant="outline" onClick={handleLogout}>
@@ -216,23 +277,23 @@ export function Dashboard() {
             <Table className="text-lg">
               <thead>
                 <tr className="bg-blue-100">
-                  <th className="px-4 py-3">Fecha</th>
-                  <th className="px-4 py-3">Tipo</th>
-                  <th className="px-4 py-3">Monto</th>
-                  <th className="px-4 py-3">Descripción</th>
-                  <th className="px-4 py-3">Categoría</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3 text-center">Fecha</th>
+                  <th className="px-4 py-3 text-center">Tipo</th>
+                  <th className="px-4 py-3 text-center">Monto</th>
+                  <th className="px-4 py-3 text-center">Descripción</th>
+                  <th className="px-4 py-3 text-center">Categoría</th>
+                  <th className="px-4 py-3 text-right">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.slice(0, 10).map((tx, idx) => (
                   <tr key={tx.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
-                    <td className="px-4 py-3">{tx.date ? new Date(tx.date).toLocaleString() : ''}</td>
-                    <td className="px-4 py-3">{tx.type === 'deposit' ? 'Depósito' : 'Gasto'}</td>
-                    <td className="px-4 py-3 font-bold">{tx.amount}</td>
-                    <td className="px-4 py-3">{tx.description}</td>
-                    <td className="px-4 py-3">{tx.category}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">{tx.date ? new Date(tx.date).toLocaleString() : ''}</td>
+                    <td className="px-4 py-3 text-center">{tx.type === 'deposit' ? 'Depósito' : 'Gasto'}</td>
+                    <td className="px-4 py-3 font-bold text-center">{tx.amount}</td>
+                    <td className="px-4 py-3 text-center">{tx.description}</td>
+                    <td className="px-4 py-3 text-center">{tx.category}</td>
+                    <td className="px-4 py-3 text-right">
                       {isAdmin && (
                         <>
                           <button className="text-blue-700 bg-blue-100 rounded px-3 py-1 mr-2 text-lg font-semibold hover:bg-blue-200" onClick={() => handleEditTransaction(tx)}>Editar</button>
@@ -256,87 +317,122 @@ export function Dashboard() {
         onSubmit={handleAddTransaction}
       />
 
+      {/* Modales solo se renderizan si están abiertos */}
       <UIDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <Card className="w-full max-w-md sm:max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Confirmar eliminación</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg text-center mb-6">¿Estás seguro que deseas eliminar esta transacción?</p>
-            <div className="flex justify-center gap-4">
-              <button className="px-6 py-2 bg-red-600 text-white rounded-lg text-lg font-semibold hover:bg-red-700" onClick={confirmDeleteTransaction}>Eliminar</button>
-              <button className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setDeleteDialogOpen(false)}>Cancelar</button>
-            </div>
-          </CardContent>
-        </Card>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Confirmar eliminación</DialogTitle>
+          </DialogHeader>
+          <p className="text-lg text-center mb-6">¿Estás seguro que deseas eliminar esta transacción?</p>
+          <div className="flex justify-center gap-4">
+            <button className="px-6 py-2 bg-red-600 text-white rounded-lg text-lg font-semibold hover:bg-red-700" onClick={confirmDeleteTransaction}>Eliminar</button>
+            <button className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setDeleteDialogOpen(false)}>Cancelar</button>
+          </div>
+        </DialogContent>
       </UIDialog>
 
       <UIDialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <Card className="w-full max-w-md sm:max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Editar transacción</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={e => { e.preventDefault(); confirmEditTransaction(); }} className="flex flex-col gap-4">
-              <label className="text-lg font-semibold">Monto
-                <input type="number" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editAmount} onChange={e => setEditAmount(Number(e.target.value))} required />
-              </label>
-              <label className="text-lg font-semibold">Descripción
-                <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editDescription} onChange={e => setEditDescription(e.target.value)} required />
-              </label>
-              <label className="text-lg font-semibold">Categoría
-                <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editCategory} onChange={e => setEditCategory(e.target.value)} required />
-              </label>
-              <div className="flex justify-center gap-4 mt-2">
-                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700">Guardar</button>
-                <button type="button" className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setEditDialogOpen(false)}>Cancelar</button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Editar transacción</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); confirmEditTransaction(); }} className="flex flex-col gap-4">
+            <label className="text-lg font-semibold">Monto
+              <input type="number" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editAmount} onChange={e => setEditAmount(Number(e.target.value))} required />
+            </label>
+            <label className="text-lg font-semibold">Descripción
+              <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editDescription} onChange={e => setEditDescription(e.target.value)} required />
+            </label>
+            <label className="text-lg font-semibold">Categoría
+              <Select value={editCategory} onValueChange={setEditCategory}>
+                <SelectTrigger className="w-full border rounded px-3 py-2 mt-1 text-lg">
+                  <SelectValue placeholder="Selecciona una categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <div className="flex justify-center gap-4 mt-2">
+              <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700">Guardar</button>
+              <button type="button" className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setEditDialogOpen(false)}>Cancelar</button>
+            </div>
+          </form>
+        </DialogContent>
       </UIDialog>
 
       <UIDialog open={auditoriaOpen} onOpenChange={setAuditoriaOpen}>
-        <Card className="w-full max-w-5xl sm:max-w-5xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center">Auditoría de Movimientos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingAuditoria ? (
-              <div className="text-xl text-center py-8">Cargando...</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table className="text-lg">
-                  <thead>
-                    <tr className="bg-blue-100">
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Usuario</th>
-                      <th className="px-4 py-3">Acción</th>
-                      <th className="px-4 py-3">Monto</th>
-                      <th className="px-4 py-3">Descripción</th>
-                      <th className="px-4 py-3">Categoría</th>
+        <DialogContent className="w-full max-w-5xl sm:max-w-5xl mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-center">Auditoría de Movimientos</DialogTitle>
+          </DialogHeader>
+          {loadingAuditoria ? (
+            <div className="text-xl text-center py-8">Cargando...</div>
+          ) : auditoria.length === 0 ? (
+            <div className="text-xl text-center py-8 text-gray-500">No hay registros de auditoría.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table className="text-lg">
+                <thead>
+                  <tr className="bg-blue-100">
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Usuario</th>
+                    <th className="px-4 py-3">Acción</th>
+                    <th className="px-4 py-3">Antes</th>
+                    <th className="px-4 py-3">Después</th>
+                    <th className="px-4 py-3">Eliminado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditoria.map((row, idx) => (
+                    <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
+                      <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
+                      <td className="px-4 py-3">{row.usuario}</td>
+                      <td className="px-4 py-3">{row.accion}</td>
+                      <td className="px-4 py-3">
+                        {row.antes ? (
+                          <div>
+                            <div><b>Monto:</b> {row.antes.amount}</div>
+                            <div><b>Descripción:</b> {row.antes.description}</div>
+                            <div><b>Categoría:</b> {row.antes.category}</div>
+                            <div><b>Tipo:</b> {row.antes.type}</div>
+                          </div>
+                        ) : ''}
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.despues ? (
+                          <div>
+                            <div><b>Monto:</b> {row.despues.amount}</div>
+                            <div><b>Descripción:</b> {row.despues.description}</div>
+                            <div><b>Categoría:</b> {row.despues.category}</div>
+                            <div><b>Tipo:</b> {row.despues.type}</div>
+                          </div>
+                        ) : ''}
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.eliminado ? (
+                          <div>
+                            <div><b>Monto:</b> {row.eliminado.amount}</div>
+                            <div><b>Descripción:</b> {row.eliminado.description}</div>
+                            <div><b>Categoría:</b> {row.eliminado.category}</div>
+                            <div><b>Tipo:</b> {row.eliminado.type}</div>
+                          </div>
+                        ) : ''}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {auditoria.map((row, idx) => (
-                      <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
-                        <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
-                        <td className="px-4 py-3">{row.usuario}</td>
-                        <td className="px-4 py-3">{row.accion}</td>
-                        <td className="px-4 py-3 font-bold">{row.detalles?.amount}</td>
-                        <td className="px-4 py-3">{row.detalles?.description}</td>
-                        <td className="px-4 py-3">{row.detalles?.category}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            )}
-            <div className="flex justify-end mt-6 sticky bottom-0 bg-white pt-4 pb-2 z-10">
-              <button className="px-6 py-3 bg-gray-400 text-white rounded-lg text-xl font-bold hover:bg-gray-500 w-full sm:w-auto" onClick={() => setAuditoriaOpen(false)}>Cerrar</button>
+                  ))}
+                </tbody>
+              </Table>
             </div>
-          </CardContent>
-        </Card>
+          )}
+          <div className="flex justify-end mt-6 sticky bottom-0 bg-white pt-4 pb-2 z-10">
+            <button className="px-6 py-3 bg-gray-400 text-white rounded-lg text-xl font-bold hover:bg-gray-500 w-full sm:w-auto" onClick={() => setAuditoriaOpen(false)}>Cerrar</button>
+          </div>
+        </DialogContent>
       </UIDialog>
     </div>
   );
