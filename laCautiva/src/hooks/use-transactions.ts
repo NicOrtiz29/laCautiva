@@ -51,18 +51,11 @@ export function useTransactions() {
         date: transaction.date
       });
       if (usuario) {
-        // registrarAuditoria si está disponible
         try {
           const { registrarAuditoria } = await import('@/lib/actions');
           await registrarAuditoria({
             usuario,
-            accion: `Agregó ${transaction.type === 'deposit' ? 'depósito' : 'gasto'}`,
-            detalles: {
-              amount: transaction.amount,
-              description: transaction.description,
-              category: transaction.category,
-              date: transaction.date
-            }
+            accion: `Agregó ${transaction.type === 'deposit' ? 'depósito' : 'gasto'}`
           });
         } catch (e) { /* noop */ }
       }

@@ -1,5 +1,3 @@
-'use server';
-
 import {
   suggestSpendingLimits,
   type SuggestSpendingLimitsInput,
@@ -20,12 +18,11 @@ export async function getSpendingSuggestion(
   }
 }
 
-export async function registrarAuditoria({ usuario, accion, detalles }: { usuario: string, accion: string, detalles?: any }) {
+export async function registrarAuditoria({ usuario, accion }: { usuario: string, accion: string }) {
   try {
     await addDoc(collection(db, 'auditoria'), {
       usuario,
       accion,
-      detalles: detalles || null,
       fecha: Timestamp.now(),
     });
   } catch (error) {
