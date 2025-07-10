@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Transaction } from '@/lib/types';
+import { registrarAuditoria } from '@/lib/actions';
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -39,7 +40,7 @@ export function useTransactions() {
   }, []);
 
   // Agregar nueva transacción
-  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>, usuario?: string) => {
     try {
       setError(null);
       await addDoc(collection(db, 'transactions'), {
@@ -49,6 +50,22 @@ export function useTransactions() {
         category: transaction.category,
         date: transaction.date
       });
+      if (usuario) {
+        // registrarAuditoria si está disponible
+        try {
+          const { registrarAuditoria } = await import('@/lib/actions');
+          await registrarAuditoria({
+            usuario,
+            accion: `Agregó ${transaction.type === 'deposit' ? 'depósito' : 'gasto'}`,
+            detalles: {
+              amount: transaction.amount,
+              description: transaction.description,
+              category: transaction.category,
+              date: transaction.date
+            }
+          });
+        } catch (e) { /* noop */ }
+      }
     } catch (error) {
       console.error('Error adding transaction:', error);
       setError('Error al agregar la transacción');
