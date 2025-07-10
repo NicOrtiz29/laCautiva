@@ -39,7 +39,13 @@ export function Dashboard() {
     setLoadingAuditoria(true);
     const snapshot = await getDocs(collection(db, 'auditoria'));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setAuditoria(data.sort((a, b) => b.fecha?.seconds - a.fecha?.seconds));
+    setAuditoria(
+      data.sort((a, b) => {
+        const fechaA = a.fecha?.seconds || 0;
+        const fechaB = b.fecha?.seconds || 0;
+        return fechaB - fechaA;
+      })
+    );
     setLoadingAuditoria(false);
   };
 
