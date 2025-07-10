@@ -32,7 +32,7 @@ type AuditoriaItem = {
 };
 
 export function Dashboard() {
-  const { transactions, addTransaction, loading: transactionsLoading } = useTransactions();
+  const { transactions, addTransaction, loading: transactionsLoading, deleteTransaction } = useTransactions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'deposit' | 'expense'>('deposit');
   const { userData, logout, isAdmin } = useAuth();
