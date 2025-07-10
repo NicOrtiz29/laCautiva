@@ -239,92 +239,86 @@ export function Dashboard() {
       />
 
       <UIDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-2 sm:p-0 overflow-y-auto">
-          <Card className="w-full max-w-md sm:max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">Confirmar eliminación</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg text-center mb-6">¿Estás seguro que deseas eliminar esta transacción?</p>
-              <div className="flex justify-center gap-4">
-                <button className="px-6 py-2 bg-red-600 text-white rounded-lg text-lg font-semibold hover:bg-red-700" onClick={confirmDeleteTransaction}>Eliminar</button>
-                <button className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setDeleteDialogOpen(false)}>Cancelar</button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="w-full max-w-md sm:max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">Confirmar eliminación</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg text-center mb-6">¿Estás seguro que deseas eliminar esta transacción?</p>
+            <div className="flex justify-center gap-4">
+              <button className="px-6 py-2 bg-red-600 text-white rounded-lg text-lg font-semibold hover:bg-red-700" onClick={confirmDeleteTransaction}>Eliminar</button>
+              <button className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setDeleteDialogOpen(false)}>Cancelar</button>
+            </div>
+          </CardContent>
+        </Card>
       </UIDialog>
 
       <UIDialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-2 sm:p-0 overflow-y-auto">
-          <Card className="w-full max-w-md sm:max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">Editar transacción</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={e => { e.preventDefault(); confirmEditTransaction(); }} className="flex flex-col gap-4">
-                <label className="text-lg font-semibold">Monto
-                  <input type="number" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editAmount} onChange={e => setEditAmount(Number(e.target.value))} required />
-                </label>
-                <label className="text-lg font-semibold">Descripción
-                  <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editDescription} onChange={e => setEditDescription(e.target.value)} required />
-                </label>
-                <label className="text-lg font-semibold">Categoría
-                  <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editCategory} onChange={e => setEditCategory(e.target.value)} required />
-                </label>
-                <div className="flex justify-center gap-4 mt-2">
-                  <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700">Guardar</button>
-                  <button type="button" className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setEditDialogOpen(false)}>Cancelar</button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="w-full max-w-md sm:max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">Editar transacción</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={e => { e.preventDefault(); confirmEditTransaction(); }} className="flex flex-col gap-4">
+              <label className="text-lg font-semibold">Monto
+                <input type="number" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editAmount} onChange={e => setEditAmount(Number(e.target.value))} required />
+              </label>
+              <label className="text-lg font-semibold">Descripción
+                <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editDescription} onChange={e => setEditDescription(e.target.value)} required />
+              </label>
+              <label className="text-lg font-semibold">Categoría
+                <input type="text" className="w-full border rounded px-3 py-2 mt-1 text-lg" value={editCategory} onChange={e => setEditCategory(e.target.value)} required />
+              </label>
+              <div className="flex justify-center gap-4 mt-2">
+                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700">Guardar</button>
+                <button type="button" className="px-6 py-2 bg-gray-400 text-white rounded-lg text-lg font-semibold hover:bg-gray-500" onClick={() => setEditDialogOpen(false)}>Cancelar</button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </UIDialog>
 
       <UIDialog open={auditoriaOpen} onOpenChange={setAuditoriaOpen}>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-2 sm:p-0 overflow-y-auto">
-          <Card className="w-full max-w-5xl sm:max-w-5xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold text-center">Auditoría de Movimientos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingAuditoria ? (
-                <div className="text-xl text-center py-8">Cargando...</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table className="text-lg">
-                    <thead>
-                      <tr className="bg-blue-100">
-                        <th className="px-4 py-3">Fecha</th>
-                        <th className="px-4 py-3">Usuario</th>
-                        <th className="px-4 py-3">Acción</th>
-                        <th className="px-4 py-3">Monto</th>
-                        <th className="px-4 py-3">Descripción</th>
-                        <th className="px-4 py-3">Categoría</th>
+        <Card className="w-full max-w-5xl sm:max-w-5xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-center">Auditoría de Movimientos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingAuditoria ? (
+              <div className="text-xl text-center py-8">Cargando...</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table className="text-lg">
+                  <thead>
+                    <tr className="bg-blue-100">
+                      <th className="px-4 py-3">Fecha</th>
+                      <th className="px-4 py-3">Usuario</th>
+                      <th className="px-4 py-3">Acción</th>
+                      <th className="px-4 py-3">Monto</th>
+                      <th className="px-4 py-3">Descripción</th>
+                      <th className="px-4 py-3">Categoría</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditoria.map((row, idx) => (
+                      <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
+                        <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
+                        <td className="px-4 py-3">{row.usuario}</td>
+                        <td className="px-4 py-3">{row.accion}</td>
+                        <td className="px-4 py-3 font-bold">{row.detalles?.amount}</td>
+                        <td className="px-4 py-3">{row.detalles?.description}</td>
+                        <td className="px-4 py-3">{row.detalles?.category}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {auditoria.map((row, idx) => (
-                        <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
-                          <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
-                          <td className="px-4 py-3">{row.usuario}</td>
-                          <td className="px-4 py-3">{row.accion}</td>
-                          <td className="px-4 py-3 font-bold">{row.detalles?.amount}</td>
-                          <td className="px-4 py-3">{row.detalles?.description}</td>
-                          <td className="px-4 py-3">{row.detalles?.category}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              )}
-              <div className="flex justify-end mt-6 sticky bottom-0 bg-white pt-4 pb-2 z-10">
-                <button className="px-6 py-3 bg-gray-400 text-white rounded-lg text-xl font-bold hover:bg-gray-500 w-full sm:w-auto" onClick={() => setAuditoriaOpen(false)}>Cerrar</button>
+                    ))}
+                  </tbody>
+                </Table>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+            <div className="flex justify-end mt-6 sticky bottom-0 bg-white pt-4 pb-2 z-10">
+              <button className="px-6 py-3 bg-gray-400 text-white rounded-lg text-xl font-bold hover:bg-gray-500 w-full sm:w-auto" onClick={() => setAuditoriaOpen(false)}>Cerrar</button>
+            </div>
+          </CardContent>
+        </Card>
       </UIDialog>
     </div>
   );
