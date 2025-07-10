@@ -80,7 +80,7 @@ export function Dashboard() {
     if (selectedTx) {
       try {
         await deleteTransaction(selectedTx.id);
-        toast({ title: 'Transacción eliminada', description: 'La transacción fue eliminada correctamente.', variant: 'success' });
+        toast({ title: 'Transacción eliminada', description: 'La transacción fue eliminada correctamente.', variant: 'default' });
       } catch (error) {
         toast({ title: 'Error al eliminar', description: 'No se pudo eliminar la transacción.', variant: 'destructive' });
       }
@@ -106,7 +106,7 @@ export function Dashboard() {
           description: editDescription,
           category: editCategory
         });
-        toast({ title: 'Transacción actualizada', description: 'Los cambios fueron guardados correctamente.', variant: 'success' });
+        toast({ title: 'Transacción actualizada', description: 'Los cambios fueron guardados correctamente.', variant: 'default' });
       } catch (error) {
         toast({ title: 'Error al editar', description: 'No se pudo actualizar la transacción.', variant: 'destructive' });
       }
