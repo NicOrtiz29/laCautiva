@@ -236,23 +236,23 @@ export function Dashboard() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:flex-nowrap sm:items-center sm:justify-end">
           {isAdmin && (
             <>
-              <Button onClick={() => openDialog('deposit')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button onClick={() => openDialog('deposit')} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Añadir Depósito
               </Button>
-              <Button variant="destructive" onClick={() => openDialog('expense')}>
+              <Button variant="destructive" onClick={() => openDialog('expense')} className="w-full sm:w-auto">
                 <MinusCircle className="mr-2 h-4 w-4" />
                 Añadir Gasto
               </Button>
-              <Button className="bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" onClick={handleOpenAuditoria}>
+              <Button className="bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 w-full sm:w-auto" onClick={handleOpenAuditoria}>
                 <BookOpen className="w-5 h-5" /> Auditoría
               </Button>
             </>
           )}
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
             <LogOut className="mr-2 h-4 w-4" />
             Cerrar Sesión
           </Button>
