@@ -19,6 +19,18 @@ import TransactionForm from '@/components/transaction-form';
 import TransactionsList from '@/components/transactions-list';
 import MonthlySummary from '@/components/spending-suggestion';
 
+type AuditoriaItem = {
+  id: string;
+  fecha?: { seconds: number };
+  usuario?: string;
+  accion?: string;
+  detalles?: {
+    amount?: number;
+    description?: string;
+    category?: string;
+  };
+};
+
 export function Dashboard() {
   const { transactions, addTransaction, loading: transactionsLoading } = useTransactions();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,7 +50,7 @@ export function Dashboard() {
   const fetchAuditoria = async () => {
     setLoadingAuditoria(true);
     const snapshot = await getDocs(collection(db, 'auditoria'));
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AuditoriaItem[];
     setAuditoria(
       data.sort((a, b) => {
         const fechaA = a.fecha?.seconds || 0;
