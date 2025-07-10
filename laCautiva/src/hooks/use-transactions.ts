@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, orderBy, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Transaction } from '@/lib/types';
-import { registrarAuditoria } from '@/lib/actions';
+// import { registrarAuditoria } from '@/lib/actions';
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);

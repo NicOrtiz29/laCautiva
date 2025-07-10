@@ -5,6 +5,8 @@ import {
   type SuggestSpendingLimitsInput,
   type SuggestSpendingLimitsOutput,
 } from '@/ai/flows/suggest-spending-limits';
+import { db } from './firebase';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
 export async function getSpendingSuggestion(
   input: SuggestSpendingLimitsInput
@@ -15,5 +17,18 @@ export async function getSpendingSuggestion(
   } catch (error) {
     console.error('Error getting spending suggestion:', error);
     return { success: false, error: 'Ocurrió un error inesperado al generar la sugerencia.' };
+  }
+}
+
+export async function registrarAuditoria({ usuario, accion, detalles }: { usuario: string, accion: string, detalles?: any }) {
+  try {
+    await addDoc(collection(db, 'auditoria'), {
+      usuario,
+      accion,
+      detalles: detalles || null,
+      fecha: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('Error al registrar auditoría:', error);
   }
 }
