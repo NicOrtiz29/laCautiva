@@ -69,6 +69,7 @@ export function Dashboard() {
   };
 
   const handleOpenAuditoria = async () => {
+    if (!isAdmin) return;
     console.log('Abriendo modal de auditoría...');
     await fetchAuditoria();
     setAuditoriaOpen(true);
@@ -173,6 +174,7 @@ export function Dashboard() {
   }, [transactions]);
 
   const handleAddTransaction = async (data: { amount: number; description: string; category: string }) => {
+    if (!isAdmin) return;
     const newTransaction = {
       type: dialogType,
       amount: data.amount,
@@ -183,7 +185,9 @@ export function Dashboard() {
     await addTransaction(newTransaction, userData?.name || userData?.email || 'Desconocido');
   };
 
-  const openDialog = (type: 'deposit' | 'expense') => {
+  // Refuerzo: Solo el admin puede abrir el formulario de transacciones
+  const handleOpenDialog = (type: 'deposit' | 'expense') => {
+    if (!isAdmin) return;
     setDialogType(type);
     setDialogOpen(true);
   };
@@ -239,11 +243,11 @@ export function Dashboard() {
         <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:flex-nowrap sm:items-center sm:justify-end">
           {isAdmin && (
             <>
-              <Button onClick={() => openDialog('deposit')} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+              <Button onClick={() => handleOpenDialog('deposit')} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Añadir Depósito
               </Button>
-              <Button variant="destructive" onClick={() => openDialog('expense')} className="w-full sm:w-auto">
+              <Button variant="destructive" onClick={() => handleOpenDialog('expense')} className="w-full sm:w-auto">
                 <MinusCircle className="mr-2 h-4 w-4" />
                 Añadir Gasto
               </Button>
@@ -267,6 +271,13 @@ export function Dashboard() {
             <MonthlySummary balance={balance} transactions={transactions} />
         </div>
       </div>
+
+      {/* Mensaje para usuarios comunes */}
+      {!isAdmin && (
+        <div className="p-4 my-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded">
+          <b>Solo lectura:</b> Tu cuenta solo permite visualizar la información. Si necesitas cargar movimientos o acceder a la auditoría, contacta a un administrador.
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -311,7 +322,7 @@ export function Dashboard() {
 
       <TransactionForm
         key={dialogType}
-        open={dialogOpen}
+        open={dialogOpen && isAdmin} // Solo admin puede abrir
         onOpenChange={setDialogOpen}
         type={dialogType}
         onSubmit={handleAddTransaction}
@@ -365,7 +376,7 @@ export function Dashboard() {
         </DialogContent>
       </UIDialog>
 
-      <UIDialog open={auditoriaOpen} onOpenChange={setAuditoriaOpen}>
+      <UIDialog open={auditoriaOpen && isAdmin} onOpenChange={setAuditoriaOpen}>
         <DialogContent className="w-full max-w-5xl sm:max-w-5xl mx-auto">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center">Auditoría de Movimientos</DialogTitle>
