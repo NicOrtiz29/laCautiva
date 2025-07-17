@@ -183,6 +183,20 @@ export function Dashboard() {
       date: new Date().toISOString(),
     };
     await addTransaction(newTransaction, userData?.name || userData?.email || 'Desconocido');
+    // Registrar auditoría
+    try {
+      const { registrarAuditoria } = await import('@/lib/actions');
+      await registrarAuditoria({
+        usuario: userData?.name || userData?.email || 'Desconocido',
+        accion: `Agregó ${dialogType === 'deposit' ? 'depósito' : 'gasto'}`,
+        agregado: {
+          amount: data.amount,
+          description: data.description,
+          category: data.category,
+          type: dialogType
+        }
+      });
+    } catch (e) { /* noop */ }
   };
 
   // Refuerzo: Solo el admin puede abrir el formulario de transacciones
@@ -378,110 +392,112 @@ export function Dashboard() {
       </UIDialog>
 
       <UIDialog open={auditoriaOpen && isAdmin} onOpenChange={setAuditoriaOpen}>
-        <DialogContent className="w-full max-w-5xl sm:max-w-5xl mx-auto">
-          <DialogHeader>
+        <DialogContent className="w-full max-w-5xl sm:max-w-5xl mx-auto max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-3xl font-bold text-center">Auditoría de Movimientos</DialogTitle>
           </DialogHeader>
-          {loadingAuditoria ? (
-            <div className="text-xl text-center py-8">Cargando...</div>
-          ) : auditoria.length === 0 ? (
-            <div className="text-xl text-center py-8 text-gray-500">No hay registros de auditoría.</div>
-          ) : (
-            <>
-              {/* Tabla para desktop */}
-              <div className="overflow-x-auto hidden md:block">
-                <Table className="text-lg">
-                  <thead>
-                    <tr className="bg-blue-100">
-                      <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Usuario</th>
-                      <th className="px-4 py-3">Acción</th>
-                      <th className="px-4 py-3">Antes</th>
-                      <th className="px-4 py-3">Después</th>
-                      <th className="px-4 py-3">Eliminado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {auditoria.map((row, idx) => (
-                      <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
-                        <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
-                        <td className="px-4 py-3">{row.usuario}</td>
-                        <td className="px-4 py-3">{row.accion}</td>
-                        <td className="px-4 py-3">
-                          {row.antes ? (
-                            <div>
-                              <div><b>Monto:</b> {row.antes.amount}</div>
-                              <div><b>Descripción:</b> {row.antes.description}</div>
-                              <div><b>Categoría:</b> {row.antes.category}</div>
-                              <div><b>Tipo:</b> {row.antes.type}</div>
-                            </div>
-                          ) : ''}
-                        </td>
-                        <td className="px-4 py-3">
-                          {row.despues ? (
-                            <div>
-                              <div><b>Monto:</b> {row.despues.amount}</div>
-                              <div><b>Descripción:</b> {row.despues.description}</div>
-                              <div><b>Categoría:</b> {row.despues.category}</div>
-                              <div><b>Tipo:</b> {row.despues.type}</div>
-                            </div>
-                          ) : ''}
-                        </td>
-                        <td className="px-4 py-3">
-                          {row.eliminado ? (
-                            <div>
-                              <div><b>Monto:</b> {row.eliminado.amount}</div>
-                              <div><b>Descripción:</b> {row.eliminado.description}</div>
-                              <div><b>Categoría:</b> {row.eliminado.category}</div>
-                              <div><b>Tipo:</b> {row.eliminado.type}</div>
-                            </div>
-                          ) : ''}
-                        </td>
+          <div className="flex-1 overflow-y-auto">
+            {loadingAuditoria ? (
+              <div className="text-xl text-center py-8">Cargando...</div>
+            ) : auditoria.length === 0 ? (
+              <div className="text-xl text-center py-8 text-gray-500">No hay registros de auditoría.</div>
+            ) : (
+              <>
+                {/* Tabla para desktop */}
+                <div className="hidden md:block">
+                  <Table className="text-lg">
+                    <thead className="sticky top-0">
+                      <tr className="bg-blue-100">
+                        <th className="px-4 py-3">Fecha</th>
+                        <th className="px-4 py-3">Usuario</th>
+                        <th className="px-4 py-3">Acción</th>
+                        <th className="px-4 py-3">Antes</th>
+                        <th className="px-4 py-3">Después</th>
+                        <th className="px-4 py-3">Eliminado</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              {/* Cards para mobile */}
-              <div className="block md:hidden space-y-4">
-                {auditoria.map((row) => (
-                  <div key={row.id} className="bg-white rounded-lg shadow border p-4">
-                    <div className="text-xs text-gray-500 mb-1">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</div>
-                    <div className="font-bold text-base mb-1">{row.usuario}</div>
-                    <div className="mb-2"><span className="font-semibold">Acción:</span> {row.accion}</div>
-                    {row.antes && (
-                      <div className="mb-2">
-                        <div className="font-semibold text-sm mb-1">Antes:</div>
-                        <div className="text-xs"><b>Monto:</b> {row.antes.amount}</div>
-                        <div className="text-xs"><b>Descripción:</b> {row.antes.description}</div>
-                        <div className="text-xs"><b>Categoría:</b> {row.antes.category}</div>
-                        <div className="text-xs"><b>Tipo:</b> {row.antes.type}</div>
-                      </div>
-                    )}
-                    {row.despues && (
-                      <div className="mb-2">
-                        <div className="font-semibold text-sm mb-1">Después:</div>
-                        <div className="text-xs"><b>Monto:</b> {row.despues.amount}</div>
-                        <div className="text-xs"><b>Descripción:</b> {row.despues.description}</div>
-                        <div className="text-xs"><b>Categoría:</b> {row.despues.category}</div>
-                        <div className="text-xs"><b>Tipo:</b> {row.despues.type}</div>
-                      </div>
-                    )}
-                    {row.eliminado && (
-                      <div className="mb-2">
-                        <div className="font-semibold text-sm mb-1">Eliminado:</div>
-                        <div className="text-xs"><b>Monto:</b> {row.eliminado.amount}</div>
-                        <div className="text-xs"><b>Descripción:</b> {row.eliminado.description}</div>
-                        <div className="text-xs"><b>Categoría:</b> {row.eliminado.category}</div>
-                        <div className="text-xs"><b>Tipo:</b> {row.eliminado.type}</div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-          <div className="flex justify-end mt-6 sticky bottom-0 bg-white pt-4 pb-2 z-10">
+                    </thead>
+                    <tbody>
+                      {auditoria.map((row, idx) => (
+                        <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
+                          <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
+                          <td className="px-4 py-3">{row.usuario}</td>
+                          <td className="px-4 py-3">{row.accion}</td>
+                          <td className="px-4 py-3">
+                            {row.antes ? (
+                              <div>
+                                <div><b>Monto:</b> {row.antes.amount}</div>
+                                <div><b>Descripción:</b> {row.antes.description}</div>
+                                <div><b>Categoría:</b> {row.antes.category}</div>
+                                <div><b>Tipo:</b> {row.antes.type}</div>
+                              </div>
+                            ) : ''}
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.despues ? (
+                              <div>
+                                <div><b>Monto:</b> {row.despues.amount}</div>
+                                <div><b>Descripción:</b> {row.despues.description}</div>
+                                <div><b>Categoría:</b> {row.despues.category}</div>
+                                <div><b>Tipo:</b> {row.despues.type}</div>
+                              </div>
+                            ) : ''}
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.eliminado ? (
+                              <div>
+                                <div><b>Monto:</b> {row.eliminado.amount}</div>
+                                <div><b>Descripción:</b> {row.eliminado.description}</div>
+                                <div><b>Categoría:</b> {row.eliminado.category}</div>
+                                <div><b>Tipo:</b> {row.eliminado.type}</div>
+                              </div>
+                            ) : ''}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+                {/* Cards para mobile */}
+                <div className="block md:hidden space-y-4 p-4">
+                  {auditoria.map((row) => (
+                    <div key={row.id} className="bg-white rounded-lg shadow border p-4">
+                      <div className="text-xs text-gray-500 mb-1">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</div>
+                      <div className="font-bold text-base mb-1">{row.usuario}</div>
+                      <div className="mb-2"><span className="font-semibold">Acción:</span> {row.accion}</div>
+                      {row.antes && (
+                        <div className="mb-2">
+                          <div className="font-semibold text-sm mb-1">Antes:</div>
+                          <div className="text-xs"><b>Monto:</b> {row.antes.amount}</div>
+                          <div className="text-xs"><b>Descripción:</b> {row.antes.description}</div>
+                          <div className="text-xs"><b>Categoría:</b> {row.antes.category}</div>
+                          <div className="text-xs"><b>Tipo:</b> {row.antes.type}</div>
+                        </div>
+                      )}
+                      {row.despues && (
+                        <div className="mb-2">
+                          <div className="font-semibold text-sm mb-1">Después:</div>
+                          <div className="text-xs"><b>Monto:</b> {row.despues.amount}</div>
+                          <div className="text-xs"><b>Descripción:</b> {row.despues.description}</div>
+                          <div className="text-xs"><b>Categoría:</b> {row.despues.category}</div>
+                          <div className="text-xs"><b>Tipo:</b> {row.despues.type}</div>
+                        </div>
+                      )}
+                      {row.eliminado && (
+                        <div className="mb-2">
+                          <div className="font-semibold text-sm mb-1">Eliminado:</div>
+                          <div className="text-xs"><b>Monto:</b> {row.eliminado.amount}</div>
+                          <div className="text-xs"><b>Descripción:</b> {row.eliminado.description}</div>
+                          <div className="text-xs"><b>Categoría:</b> {row.eliminado.category}</div>
+                          <div className="text-xs"><b>Tipo:</b> {row.eliminado.type}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="flex justify-end mt-6 flex-shrink-0 pt-4 pb-2 z-10">
             <button className="px-6 py-3 bg-gray-400 text-white rounded-lg text-xl font-bold hover:bg-gray-500 w-full sm:w-auto" onClick={() => setAuditoriaOpen(false)}>Cerrar</button>
           </div>
         </DialogContent>
