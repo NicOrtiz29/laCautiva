@@ -189,7 +189,7 @@ export function Dashboard() {
       await registrarAuditoria({
         usuario: userData?.name || userData?.email || 'Desconocido',
         accion: `Agregó ${dialogType === 'deposit' ? 'depósito' : 'gasto'}`,
-        agregado: {
+        despues: {
           amount: data.amount,
           description: data.description,
           category: data.category,
