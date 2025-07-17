@@ -56,6 +56,7 @@ export default function TransactionForm({ open, onOpenChange, type, onSubmit }: 
         { value: 'donacion', label: 'Donación' },
         { value: 'subvencion', label: 'Subvención' },
         { value: 'evento', label: 'Evento' },
+        { value: 'viajes', label: 'Viajes' },
         { value: 'otros_ingresos', label: 'Otros Ingresos' }
       ]
     : [

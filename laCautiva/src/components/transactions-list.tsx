@@ -42,6 +42,7 @@ export default function TransactionsList({ transactions }: TransactionsListProps
       'donacion': 'bg-pink-100 text-pink-800',
       'subvencion': 'bg-indigo-100 text-indigo-800',
       'evento': 'bg-yellow-100 text-yellow-800',
+      'viajes': 'bg-blue-100 text-blue-800', // Usar la misma clave para ambos tipos
       'otros_ingresos': 'bg-teal-100 text-teal-800'
     };
     return categoryColors[category] || 'bg-gray-100 text-gray-800';
@@ -59,6 +60,7 @@ export default function TransactionsList({ transactions }: TransactionsListProps
       'donacion': 'Donación',
       'subvencion': 'Subvención',
       'evento': 'Evento',
+      'viajes': 'Viajes', // Usar la misma clave para ambos tipos
       'otros_ingresos': 'Otros Ingresos'
     };
     return categoryLabels[category] || category;

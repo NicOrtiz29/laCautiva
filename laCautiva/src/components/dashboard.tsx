@@ -207,6 +207,7 @@ export function Dashboard() {
         { value: 'donacion', label: 'Donación' },
         { value: 'subvencion', label: 'Subvención' },
         { value: 'evento', label: 'Evento' },
+        { value: 'viajes', label: 'Viajes' },
         { value: 'otros_ingresos', label: 'Otros Ingresos' }
       ]
     : [
@@ -293,7 +294,9 @@ export function Dashboard() {
                   <th className="px-4 py-3 text-center">Monto</th>
                   <th className="px-4 py-3 text-center">Descripción</th>
                   <th className="px-4 py-3 text-center">Categoría</th>
-                  <th className="px-4 py-3 text-right">Acción</th>
+                  {isAdmin && (
+                    <th className="px-4 py-3 text-right">Acción</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -304,14 +307,12 @@ export function Dashboard() {
                     <td className="px-4 py-3 font-bold text-center">{tx.amount}</td>
                     <td className="px-4 py-3 text-center">{tx.description}</td>
                     <td className="px-4 py-3 text-center">{tx.category}</td>
-                    <td className="px-4 py-3 text-right">
-                      {isAdmin && (
-                        <>
-                          <button className="text-blue-700 bg-blue-100 rounded px-3 py-1 mr-2 text-lg font-semibold hover:bg-blue-200" onClick={() => handleEditTransaction(tx)}>Editar</button>
-                          <button className="text-red-700 bg-red-100 rounded px-3 py-1 text-lg font-semibold hover:bg-red-200" onClick={() => handleDeleteTransaction(tx.id)}>Eliminar</button>
-                        </>
-                      )}
-                    </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-right">
+                        <button className="text-blue-700 bg-blue-100 rounded px-3 py-1 mr-2 text-lg font-semibold hover:bg-blue-200" onClick={() => handleEditTransaction(tx)}>Editar</button>
+                        <button className="text-red-700 bg-red-100 rounded px-3 py-1 text-lg font-semibold hover:bg-red-200" onClick={() => handleDeleteTransaction(tx.id)}>Eliminar</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -386,59 +387,99 @@ export function Dashboard() {
           ) : auditoria.length === 0 ? (
             <div className="text-xl text-center py-8 text-gray-500">No hay registros de auditoría.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table className="text-lg">
-                <thead>
-                  <tr className="bg-blue-100">
-                    <th className="px-4 py-3">Fecha</th>
-                    <th className="px-4 py-3">Usuario</th>
-                    <th className="px-4 py-3">Acción</th>
-                    <th className="px-4 py-3">Antes</th>
-                    <th className="px-4 py-3">Después</th>
-                    <th className="px-4 py-3">Eliminado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditoria.map((row, idx) => (
-                    <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
-                      <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
-                      <td className="px-4 py-3">{row.usuario}</td>
-                      <td className="px-4 py-3">{row.accion}</td>
-                      <td className="px-4 py-3">
-                        {row.antes ? (
-                          <div>
-                            <div><b>Monto:</b> {row.antes.amount}</div>
-                            <div><b>Descripción:</b> {row.antes.description}</div>
-                            <div><b>Categoría:</b> {row.antes.category}</div>
-                            <div><b>Tipo:</b> {row.antes.type}</div>
-                          </div>
-                        ) : ''}
-                      </td>
-                      <td className="px-4 py-3">
-                        {row.despues ? (
-                          <div>
-                            <div><b>Monto:</b> {row.despues.amount}</div>
-                            <div><b>Descripción:</b> {row.despues.description}</div>
-                            <div><b>Categoría:</b> {row.despues.category}</div>
-                            <div><b>Tipo:</b> {row.despues.type}</div>
-                          </div>
-                        ) : ''}
-                      </td>
-                      <td className="px-4 py-3">
-                        {row.eliminado ? (
-                          <div>
-                            <div><b>Monto:</b> {row.eliminado.amount}</div>
-                            <div><b>Descripción:</b> {row.eliminado.description}</div>
-                            <div><b>Categoría:</b> {row.eliminado.category}</div>
-                            <div><b>Tipo:</b> {row.eliminado.type}</div>
-                          </div>
-                        ) : ''}
-                      </td>
+            <>
+              {/* Tabla para desktop */}
+              <div className="overflow-x-auto hidden md:block">
+                <Table className="text-lg">
+                  <thead>
+                    <tr className="bg-blue-100">
+                      <th className="px-4 py-3">Fecha</th>
+                      <th className="px-4 py-3">Usuario</th>
+                      <th className="px-4 py-3">Acción</th>
+                      <th className="px-4 py-3">Antes</th>
+                      <th className="px-4 py-3">Después</th>
+                      <th className="px-4 py-3">Eliminado</th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {auditoria.map((row, idx) => (
+                      <tr key={row.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
+                        <td className="px-4 py-3 font-semibold">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</td>
+                        <td className="px-4 py-3">{row.usuario}</td>
+                        <td className="px-4 py-3">{row.accion}</td>
+                        <td className="px-4 py-3">
+                          {row.antes ? (
+                            <div>
+                              <div><b>Monto:</b> {row.antes.amount}</div>
+                              <div><b>Descripción:</b> {row.antes.description}</div>
+                              <div><b>Categoría:</b> {row.antes.category}</div>
+                              <div><b>Tipo:</b> {row.antes.type}</div>
+                            </div>
+                          ) : ''}
+                        </td>
+                        <td className="px-4 py-3">
+                          {row.despues ? (
+                            <div>
+                              <div><b>Monto:</b> {row.despues.amount}</div>
+                              <div><b>Descripción:</b> {row.despues.description}</div>
+                              <div><b>Categoría:</b> {row.despues.category}</div>
+                              <div><b>Tipo:</b> {row.despues.type}</div>
+                            </div>
+                          ) : ''}
+                        </td>
+                        <td className="px-4 py-3">
+                          {row.eliminado ? (
+                            <div>
+                              <div><b>Monto:</b> {row.eliminado.amount}</div>
+                              <div><b>Descripción:</b> {row.eliminado.description}</div>
+                              <div><b>Categoría:</b> {row.eliminado.category}</div>
+                              <div><b>Tipo:</b> {row.eliminado.type}</div>
+                            </div>
+                          ) : ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+              {/* Cards para mobile */}
+              <div className="block md:hidden space-y-4">
+                {auditoria.map((row) => (
+                  <div key={row.id} className="bg-white rounded-lg shadow border p-4">
+                    <div className="text-xs text-gray-500 mb-1">{row.fecha?.seconds ? new Date(row.fecha.seconds * 1000).toLocaleString() : ''}</div>
+                    <div className="font-bold text-base mb-1">{row.usuario}</div>
+                    <div className="mb-2"><span className="font-semibold">Acción:</span> {row.accion}</div>
+                    {row.antes && (
+                      <div className="mb-2">
+                        <div className="font-semibold text-sm mb-1">Antes:</div>
+                        <div className="text-xs"><b>Monto:</b> {row.antes.amount}</div>
+                        <div className="text-xs"><b>Descripción:</b> {row.antes.description}</div>
+                        <div className="text-xs"><b>Categoría:</b> {row.antes.category}</div>
+                        <div className="text-xs"><b>Tipo:</b> {row.antes.type}</div>
+                      </div>
+                    )}
+                    {row.despues && (
+                      <div className="mb-2">
+                        <div className="font-semibold text-sm mb-1">Después:</div>
+                        <div className="text-xs"><b>Monto:</b> {row.despues.amount}</div>
+                        <div className="text-xs"><b>Descripción:</b> {row.despues.description}</div>
+                        <div className="text-xs"><b>Categoría:</b> {row.despues.category}</div>
+                        <div className="text-xs"><b>Tipo:</b> {row.despues.type}</div>
+                      </div>
+                    )}
+                    {row.eliminado && (
+                      <div className="mb-2">
+                        <div className="font-semibold text-sm mb-1">Eliminado:</div>
+                        <div className="text-xs"><b>Monto:</b> {row.eliminado.amount}</div>
+                        <div className="text-xs"><b>Descripción:</b> {row.eliminado.description}</div>
+                        <div className="text-xs"><b>Categoría:</b> {row.eliminado.category}</div>
+                        <div className="text-xs"><b>Tipo:</b> {row.eliminado.type}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
           <div className="flex justify-end mt-6 sticky bottom-0 bg-white pt-4 pb-2 z-10">
             <button className="px-6 py-3 bg-gray-400 text-white rounded-lg text-xl font-bold hover:bg-gray-500 w-full sm:w-auto" onClick={() => setAuditoriaOpen(false)}>Cerrar</button>
